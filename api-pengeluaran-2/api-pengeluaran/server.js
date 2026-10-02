@@ -25,11 +25,11 @@ app.get('/', (req, res) => {
 app.get('/pengeluaran', async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT p.id, p.judul, p.nominal, p.tanggal,
+      `SELECT p.id, p.judul, p.nominal, p.tanggal, p.catatan, p.id_kategori,
               k.nama AS kategori
        FROM pengeluaran p
        LEFT JOIN kategori k ON p.id_kategori = k.id
-       ORDER BY p.tanggal DESC`
+       ORDER BY p.tanggal DESC, p.id DESC`
     );
     res.json(rows);
   } catch (e) {
@@ -42,7 +42,11 @@ app.get('/pengeluaran', async (req, res) => {
 app.get('/pengeluaran/:id', async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT * FROM pengeluaran WHERE id = ?',
+      `SELECT p.id, p.judul, p.nominal, p.tanggal, p.catatan, p.id_kategori,
+              k.nama AS kategori
+       FROM pengeluaran p
+       LEFT JOIN kategori k ON p.id_kategori = k.id
+       WHERE p.id = ?`,
       [req.params.id]
     );
     if (rows.length === 0) {
@@ -57,18 +61,19 @@ app.get('/pengeluaran/:id', async (req, res) => {
 
 // tambah data
 app.post('/pengeluaran', async (req, res) => {
-  const { judul, nominal, id_kategori } = req.body;
+  const { judul, nominal, id_kategori, catatan, tanggal } = req.body;
 
   if (!judul || !nominal) {
     return res.status(400).json({ pesan: 'judul & nominal wajib' });
   }
   try {
+    const tanggalFinal = tanggal || new Date().toISOString().slice(0, 10);
     const [hasil] = await pool.query(
-      `INSERT INTO pengeluaran (judul, nominal, id_kategori)
-       VALUES (?, ?, ?)`,
-      [judul, Number(nominal), id_kategori ?? null]
+      `INSERT INTO pengeluaran (judul, nominal, id_kategori, catatan, tanggal)
+       VALUES (?, ?, ?, ?, ?)`,
+      [judul, Number(nominal), id_kategori ?? null, catatan ?? null, tanggalFinal]
     );
-    res.status(201).json({ id: hasil.insertId, judul, nominal });
+    res.status(201).json({ id: hasil.insertId, judul, nominal, tanggal: tanggalFinal, id_kategori, catatan });
   } catch (e) {
     console.error(e);
     res.status(500).json({ pesan: 'Gagal menyimpan data' });

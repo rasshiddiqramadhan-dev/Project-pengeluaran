@@ -1,0 +1,8 @@
+{
+  "name": "api-pengeluaran-parent",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm --prefix api-pengeluaran run dev",
+    "start": "npm --prefix api-pengeluaran start"
+  }
+}
